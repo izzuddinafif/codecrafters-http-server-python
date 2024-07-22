@@ -9,25 +9,21 @@ def main():
     # Uncomment this to pass the first stage
     
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
-    # this is a concise way to do it:
-    # server_socket.accept()[0].sendall(b"HTTP/1.1 200 OK\r\n\r\n") # take the client socket object (index 0) and use the sendall() on that object
     client, address = server_socket.accept()
-    data = client.recv(1024)
-    print(type(data))
-    print(data)
-    request = data.decode()
-    print(type(request))
-    print(request)
-    lines = request.split("\n")
-    print(type(lines))
-    print(lines)
-    req_line = lines[0].split(' ')
-    path = req_line[1]
-    print(path)
+    data = client.recv(1024).decode()
+    req = data.split("\r\n")[0]
+    method, path, version = req.split(' ')
     if(path == "/"):
         client.sendall(b"HTTP/1.1 200 OK\r\n\r\n")
+    elif path.startswith("/echo/"):
+        echo_string = path[len("/echo/"):] # extract string after /echo/ (path[6:])
+        content_length = len(echo_string)
+        print(f"{echo_string} {content_length}")
+        client.sendall(f"HTTP/1.1 200 OK\r\n\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n{echo_string}".encode())
     else:
         client.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
+    client.close()
+    server_socket.close()
 
 if __name__ == "__main__":
     main()
