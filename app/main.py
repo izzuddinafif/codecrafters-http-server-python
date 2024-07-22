@@ -14,14 +14,14 @@ def main():
     req = data.split("\r\n")[0]
     method, path, version = req.split(' ')
     if(path == "/"):
-        client.sendall(b"HTTP/1.1 200 OK\r\n\r\n")
+        client.sendall(b"HTTP/1.1 200 OK\r\n\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
     elif path.startswith("/echo/"):
         echo_string = path[len("/echo/"):] # extract string after /echo/ (path[6:])
         content_length = len(echo_string)
         print(f"{echo_string} {content_length}")
         client.sendall(f"HTTP/1.1 200 OK\r\n\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n{echo_string}".encode())
     else:
-        client.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
+        client.sendall(b"HTTP/1.1 404 Not Found\r\n\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
     client.close()
     server_socket.close()
 
