@@ -1,3 +1,4 @@
+# Uncomment this to pass the first stage
 import socket
 import threading
 
@@ -26,7 +27,7 @@ def handle_client(client):
         elif path == "/user-agent":
             for header in headers:
                 if header.startswith("User-Agent: "):
-                    user_agent = header[len("User-Agent "):]
+                    user_agent = header[len("User-Agent: "):]
                     ua_length = len(user_agent)
                     client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {ua_length}\r\n\r\n{user_agent}".encode())    
         else:
