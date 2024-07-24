@@ -46,6 +46,8 @@ def handle_client(client, directory):
                 except Exception as e:
                     print(f"Error opening file: {e}")
                     client.sendall(b"HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
+            else:
+                print(b"HTTP/1.1 404 Not Found\r\n\r\n")
 
         else:
             client.sendall(b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
