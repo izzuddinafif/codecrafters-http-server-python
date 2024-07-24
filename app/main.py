@@ -11,47 +11,64 @@ def handle_client(client, directory):
             return
 
         lines = data.split("\r\n")
+        # print(lines)
+        body = lines[-1]
+        print(f"data = {body}")
         req = lines[0]
         headers = lines[1:]
+        # print(req)
+        method, path, _ = req.split(' ')
+        print(method)
         
-        method, path, version = req.split(' ')
-        
-        if path == '/':
-            client.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
-        
-        elif path.startswith("/echo/"):
-            echo_string = path[len("/echo/"):] # extract string after /echo/ (path[6:])
-            content_length = len(echo_string)
-            client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n{echo_string}".encode())
-        
-        elif path == "/user-agent":
-            for header in headers:
-                if header.startswith("User-Agent: "):
-                    user_agent = header[len("User-Agent: "):]
-                    ua_length = len(user_agent)
-                    client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {ua_length}\r\n\r\n{user_agent}".encode())    
-        
-        elif path.startswith("/files/"):
-            filename = path[len("/files/"):]
-            filepath = os.path.join(directory, filename)
+        if method == "GET": 
+            if path == '/':
+                client.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
+            
+            elif path.startswith("/echo/"):
+                echo_string = path[len("/echo/"):] # extract string after /echo/ (path[6:])
+                content_length = len(echo_string)
+                client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n{echo_string}".encode())
+            
+            elif path == "/user-agent":
+                for header in headers:
+                    if header.startswith("User-Agent: "):
+                        user_agent = header[len("User-Agent: "):]
+                        ua_length = len(user_agent)
+                        client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {ua_length}\r\n\r\n{user_agent}".encode())    
+            
+            elif path.startswith("/files/"):
+                filename = path[len("/files/"):]
+                filepath = os.path.join(directory, filename)
 
-            if os.path.isfile(filepath):
-                try:
-                    with open(filepath, 'r') as f:
-                        content = f.read()
-                        content_length = len(content)
-                        
+                if os.path.isfile(filepath):
+                    try:
+                        with open(filepath, 'r') as f:
+                            content = f.read()
+                            content_length = len(content)
+                            
                         client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {content_length}\r\n\r\n{content}".encode())
-                        
-                except Exception as e:
-                    print(f"Error opening file: {e}")
-                    client.sendall(b"HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
+                            
+                    except Exception as e:
+                        print(f"Error opening file: {e}")
+                        client.sendall(b"HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
+                else:
+                    client.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
+
             else:
-                client.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
-
-        else:
-            client.sendall(b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
-
+                client.sendall(b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
+                
+        elif method == "POST":
+            print("hey im in 2nd elif")
+            if path.startswith("/files/"):
+                print("hey im in files path")
+                filename = path[len("/files/"):]
+                print(filename)
+                filepath = os.path.join(directory, filename)
+                with open(filepath, 'w+') as f:
+                    f.write(body)
+                print(filepath)
+                client.sendall(b"HTTP/1.1 201 Created\r\n\r\n")                   
+                
     except Exception as e:
         print(f"Error: {e}")
         client.sendall(b"HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
