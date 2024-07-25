@@ -8,6 +8,7 @@ import gzip
        
 
 def handle_client(client, directory):
+    enc_flag = False
     try:
         data = client.recv(1024).decode()
         if not data:
