@@ -1,5 +1,3 @@
-from bz2 import compress
-from curses import echo
 import socket
 import threading
 import argparse
@@ -27,9 +25,9 @@ def handle_client(client, directory):
         
         for header in headers:
             if header.startswith("Accept-Encoding: "):
-                encoding = header.split(':')[1].strip().split(',')
+                encoding = [enc.strip() for enc in header.split(':')[1].split(',')]
                 print(encoding)
-                print(type(encoding))
+                # print(type(encoding))
                 enc_flag = True
             if header.startswith("User-Agent: "):
                 user_agent = header[len("User-Agent: "):]
@@ -42,7 +40,7 @@ def handle_client(client, directory):
             elif path.startswith("/echo/"):
                 echo_string = path[len("/echo/"):].encode() # extract string after /echo/ (path[6:])
                 content_length = len(echo_string)
-                response = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n".encode()
+                default_response = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n".encode()
                 if enc_flag:
                     # print("im in encflag")
                     if "gzip" in encoding: 
@@ -51,9 +49,9 @@ def handle_client(client, directory):
                         # print("im in gzip")
                         client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {content_length}\r\n\r\n".encode()+compressed_string)
                     else:
-                        client.sendall(response + echo_string)
+                        client.sendall(default_response + echo_string)
                 else:
-                    client.sendall(response + echo_string)
+                    client.sendall(default_response + echo_string)
                                 
             elif path == "/user-agent":
                 client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {ua_length}\r\n\r\n{user_agent}".encode())    
