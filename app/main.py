@@ -42,17 +42,18 @@ def handle_client(client, directory):
             elif path.startswith("/echo/"):
                 echo_string = path[len("/echo/"):].encode() # extract string after /echo/ (path[6:])
                 content_length = len(echo_string)
+                response = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n".encode()
                 if enc_flag:
-                    print("im in encflag")
-                    if "gzip" in encoding:
-                        print("im in gzip")
+                    # print("im in encflag")
+                    if "gzip" in encoding: 
                         compressed_string = gzip.compress(echo_string)
                         content_length = len(compressed_string)
-                        client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {content_length}\r\n\r\n{compressed_string}".encode())
+                        # print("im in gzip")
+                        client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {content_length}\r\n\r\n".encode()+compressed_string)
                     else:
-                        client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n{echo_string}".encode())
+                        client.sendall(response + echo_string)
                 else:
-                    client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n{echo_string.decode()}".encode())
+                    client.sendall(response + echo_string)
                                 
             elif path == "/user-agent":
                 client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {ua_length}\r\n\r\n{user_agent}".encode())    
