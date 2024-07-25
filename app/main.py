@@ -27,7 +27,8 @@ def handle_client(client, directory):
         for header in headers:
             if header.startswith("Accept-Encoding: "):
                 encoding = header.split(':')[1].strip().split(',')
-                # print(encoding)
+                print(encoding)
+                print(type(encoding))
                 enc_flag = True
             if header.startswith("User-Agent: "):
                 user_agent = header[len("User-Agent: "):]
@@ -41,7 +42,9 @@ def handle_client(client, directory):
                 echo_string = path[len("/echo/"):].encode() # extract string after /echo/ (path[6:])
                 content_length = len(echo_string)
                 if enc_flag:
-                    if encoding == "gzip":
+                    print("im in encflag")
+                    if "gzip" in encoding:
+                        print("im in gzip")
                         compressed_string = gzip.compress(echo_string)
                         content_length = len(compressed_string)
                         client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {content_length}\r\n\r\n{compressed_string}".encode())
