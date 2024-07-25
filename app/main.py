@@ -2,6 +2,16 @@ import socket
 import threading
 import argparse
 import os
+import gzip
+
+enc_flag = False
+
+def echo_string_func(client,string):
+    content_length = len(string)
+    if enc_flag:
+        client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {content_length}\r\n\r\n{string}".encode())
+    else:
+        client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n{string}".encode())
 
 def handle_client(client, directory):
     try:
@@ -11,30 +21,41 @@ def handle_client(client, directory):
             return
 
         lines = data.split("\r\n")
-        # print(lines)
+        print(lines)
         body = lines[-1]
         print(f"data = {body}")
         req = lines[0]
         headers = lines[1:]
-        # print(req)
+        print(req)
         method, path, _ = req.split(' ')
         print(method)
         
+        for header in headers:
+            if header.startswith("Accept-Encoding: "):
+                encoding = header.split(':')[1].strip().split(',')
+                print(encoding)
+                enc_flag = True
+            if header.startswith("User-Agent: "):
+                user_agent = header[len("User-Agent: "):]
+                ua_length = len(user_agent)
+            
         if method == "GET": 
             if path == '/':
                 client.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
             
             elif path.startswith("/echo/"):
-                echo_string = path[len("/echo/"):] # extract string after /echo/ (path[6:])
-                content_length = len(echo_string)
-                client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content_length}\r\n\r\n{echo_string}".encode())
-            
+                echo_string = path[len("/echo/"):].encode() # extract string after /echo/ (path[6:])
+                if enc_flag:
+                    if encoding == "gzip":
+                        compressed_string = gzip.compress(echo_string)
+                        echo_string_func(client, compressed_string)
+                    else:
+                        echo_string_func(client, echo_string)
+                else:
+                    echo_string_func(client, echo_string)
+                                
             elif path == "/user-agent":
-                for header in headers:
-                    if header.startswith("User-Agent: "):
-                        user_agent = header[len("User-Agent: "):]
-                        ua_length = len(user_agent)
-                        client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {ua_length}\r\n\r\n{user_agent}".encode())    
+                client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {ua_length}\r\n\r\n{user_agent}".encode())    
             
             elif path.startswith("/files/"):
                 filename = path[len("/files/"):]
@@ -53,20 +74,18 @@ def handle_client(client, directory):
                         client.sendall(b"HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
                 else:
                     client.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
-
+                                        
             else:
                 client.sendall(b"HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n")
                 
         elif method == "POST":
-            print("hey im in 2nd elif")
             if path.startswith("/files/"):
-                print("hey im in files path")
                 filename = path[len("/files/"):]
-                print(filename)
+                # print(filename)
                 filepath = os.path.join(directory, filename)
                 with open(filepath, 'w+') as f:
                     f.write(body)
-                print(filepath)
+                # print(filepath)
                 client.sendall(b"HTTP/1.1 201 Created\r\n\r\n")                   
                 
     except Exception as e:
