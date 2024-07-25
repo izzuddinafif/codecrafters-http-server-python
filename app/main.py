@@ -46,7 +46,7 @@ def handle_client(client, directory):
                     print("im in encflag")
                     if "gzip" in encoding:
                         print("im in gzip")
-                        compressed_string = gzip.compress(echo_string).decode()
+                        compressed_string = gzip.compress(echo_string)
                         content_length = len(compressed_string)
                         client.sendall(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {content_length}\r\n\r\n{compressed_string}".encode())
                     else:
